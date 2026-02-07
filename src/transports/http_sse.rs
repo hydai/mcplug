@@ -426,6 +426,45 @@ mod tests {
     }
 
     #[test]
+    fn http_transport_debug_format() {
+        let transport = HttpSseTransport::new(
+            "https://example.com/mcp",
+            &HashMap::new(),
+            "debug-server",
+            false,
+        )
+        .unwrap();
+        let debug_str = format!("{:?}", transport);
+        assert!(debug_str.contains("HttpSseTransport"));
+        assert!(debug_str.contains("https://example.com/mcp"));
+        assert!(debug_str.contains("debug-server"));
+    }
+
+    #[test]
+    fn http_transport_with_localhost_http_allowed() {
+        let result = HttpSseTransport::new(
+            "http://127.0.0.1:9999/mcp",
+            &HashMap::new(),
+            "local-server",
+            true,
+        );
+        assert!(result.is_ok());
+        let t = result.unwrap();
+        assert_eq!(t.base_url, "http://127.0.0.1:9999/mcp");
+    }
+
+    #[test]
+    fn http_transport_rejects_empty_url() {
+        let result = HttpSseTransport::new(
+            "",
+            &HashMap::new(),
+            "empty-url-server",
+            false,
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn session_id_starts_none() {
         let transport = HttpSseTransport::new(
             "https://example.com/mcp",

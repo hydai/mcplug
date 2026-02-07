@@ -164,4 +164,55 @@ mod tests {
         let err = McplugError::ServerNotFound("test".into());
         print_error(&err, false);
     }
+
+    // --- P2/P3 additional tests ---
+
+    #[test]
+    fn print_call_result_json_error_content() {
+        let result = CallResult {
+            content: vec![ContentBlock::Text {
+                text: "something went wrong".into(),
+            }],
+            is_error: true,
+            raw_response: None,
+        };
+        // JSON mode should output valid JSON with isError: true (doesn't panic)
+        print_call_result(&result, OutputMode::Json, false);
+    }
+
+    #[test]
+    fn print_call_result_mixed_content_blocks() {
+        let result = CallResult {
+            content: vec![
+                ContentBlock::Text {
+                    text: "Hello".into(),
+                },
+                ContentBlock::Image {
+                    data: "base64data".into(),
+                    mime_type: "image/jpeg".into(),
+                },
+                ContentBlock::Resource {
+                    uri: "file://doc.txt".into(),
+                    text: "Document content".into(),
+                },
+            ],
+            is_error: false,
+            raw_response: None,
+        };
+        // Pretty mode should handle all three block types without panic
+        print_call_result(&result, OutputMode::Pretty, false);
+    }
+
+    #[test]
+    fn print_call_result_empty_content() {
+        let result = CallResult {
+            content: vec![],
+            is_error: false,
+            raw_response: None,
+        };
+        // Empty content should be handled gracefully in all modes
+        print_call_result(&result, OutputMode::Pretty, false);
+        print_call_result(&result, OutputMode::Json, false);
+        print_call_result(&result, OutputMode::Raw, false);
+    }
 }

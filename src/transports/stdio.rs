@@ -384,6 +384,43 @@ mod tests {
         });
     }
 
+    #[test]
+    fn stdio_transport_with_args() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let transport = StdioTransport::new(
+                "echo",
+                &["hello".to_string(), "world".to_string()],
+                &HashMap::new(),
+                None,
+                "args-server",
+            );
+            assert!(transport.is_ok());
+            let mut t = transport.unwrap();
+            let _ = t.close().await;
+        });
+    }
+
+    #[test]
+    fn stdio_transport_debug_format() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let transport = StdioTransport::new(
+                "cat",
+                &[],
+                &HashMap::new(),
+                None,
+                "debug-server",
+            )
+            .unwrap();
+            let debug_str = format!("{:?}", transport);
+            assert!(debug_str.contains("StdioTransport"));
+            assert!(debug_str.contains("debug-server"));
+            let mut child = transport.child.lock().await;
+            let _ = child.kill().await;
+        });
+    }
+
     #[tokio::test]
     async fn stdio_transport_send_and_receive() {
         // Use `cat` which echoes stdin to stdout — we can send a JSON-RPC

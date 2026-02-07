@@ -243,4 +243,23 @@ mod tests {
         std::env::remove_var("MCPLUG_TEST_SC_KEY");
         std::env::remove_var("MCPLUG_TEST_SC_TOK");
     }
+
+    #[test]
+    fn expand_unclosed_brace_errors() {
+        let err = expand_env_vars("prefix-${UNCLOSED_VAR").unwrap_err();
+        assert!(err.to_string().contains("Unclosed"));
+    }
+
+    #[test]
+    fn expand_dollar_without_brace_or_env_is_literal() {
+        let result = expand_env_vars("price is $5").unwrap();
+        assert_eq!(result, "price is $5");
+    }
+
+    #[test]
+    fn expand_empty_env_colon_var_errors() {
+        // $env: followed by a non-alphanumeric character results in empty var name
+        let err = expand_env_vars("$env:").unwrap_err();
+        assert!(err.to_string().contains("Empty variable name"));
+    }
 }

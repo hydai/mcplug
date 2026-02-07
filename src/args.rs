@@ -528,4 +528,45 @@ mod tests {
         let result = suggest_tool("search", &[]);
         assert_eq!(result, None);
     }
+
+    // --- P2/P3 additional tests ---
+
+    #[test]
+    fn parse_args_null_coercion() {
+        let result = parse_args(&["key:null".to_string()]).unwrap();
+        assert_eq!(result, json!({"key": null}));
+    }
+
+    #[test]
+    fn parse_args_json_object_inline() {
+        let result = parse_args(&[r#"key:{"nested":"val"}"#.to_string()]).unwrap();
+        assert_eq!(result, json!({"key": {"nested": "val"}}));
+    }
+
+    #[test]
+    fn parse_args_json_array_inline() {
+        let result = parse_args(&["key:[1,2,3]".to_string()]).unwrap();
+        assert_eq!(result, json!({"key": [1, 2, 3]}));
+    }
+
+    #[test]
+    fn parse_args_empty_quoted_string() {
+        let result = parse_args(&[r#"key:"""#.to_string()]).unwrap();
+        assert_eq!(result, json!({"key": ""}));
+    }
+
+    #[test]
+    fn parse_args_single_quote_stripping() {
+        let result = parse_args(&["key:'hello'".to_string()]).unwrap();
+        assert_eq!(result, json!({"key": "hello"}));
+    }
+
+    #[test]
+    fn parse_function_call_nested_json_arg() {
+        let (server, tool, args) =
+            parse_function_call(r#"srv.tool(data: {"a": [1, 2]})"#).unwrap();
+        assert_eq!(server, "srv");
+        assert_eq!(tool, "tool");
+        assert_eq!(args, json!({"data": {"a": [1, 2]}}));
+    }
 }

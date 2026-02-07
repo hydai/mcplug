@@ -192,4 +192,140 @@ mod tests {
             "Protocol error: unexpected message type"
         );
     }
+
+    // --- P2/P3 additional tests ---
+
+    #[test]
+    fn error_code_mapping_all_variants() {
+        assert_eq!(McplugError::ServerNotFound("s".into()).code(), "not_found");
+        assert_eq!(
+            McplugError::ToolNotFound {
+                server: "s".into(),
+                tool: "t".into()
+            }
+            .code(),
+            "not_found"
+        );
+        assert_eq!(
+            McplugError::ConnectionFailed {
+                server: "s".into(),
+                source: "err".into()
+            }
+            .code(),
+            "connection_refused"
+        );
+        assert_eq!(
+            McplugError::Timeout {
+                server: "s".into(),
+                tool: None,
+                duration: Duration::from_secs(1)
+            }
+            .code(),
+            "timeout"
+        );
+        assert_eq!(McplugError::AuthRequired("s".into()).code(), "auth_required");
+        assert_eq!(
+            McplugError::ConfigError {
+                path: PathBuf::from("/a"),
+                detail: "d".into()
+            }
+            .code(),
+            "config_error"
+        );
+        assert_eq!(
+            McplugError::TransportError("e".into()).code(),
+            "transport_error"
+        );
+        assert_eq!(McplugError::ProtocolError("e".into()).code(), "parse_error");
+        assert_eq!(McplugError::OAuthError("e".into()).code(), "oauth_error");
+        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "test");
+        assert_eq!(McplugError::IoError(io_err).code(), "io_error");
+    }
+
+    #[test]
+    fn error_to_json_structure() {
+        let err = McplugError::ToolNotFound {
+            server: "myserver".into(),
+            tool: "mytool".into(),
+        };
+        let json = err.to_json();
+        let error_obj = json.get("error").expect("should have error key");
+        assert_eq!(error_obj["server"], "myserver");
+        assert_eq!(error_obj["tool"], "mytool");
+        assert_eq!(error_obj["code"], "not_found");
+        assert!(error_obj["message"].as_str().unwrap().contains("mytool"));
+    }
+
+    #[test]
+    fn error_server_name_accessors() {
+        assert_eq!(
+            McplugError::ServerNotFound("s1".into()).server_name(),
+            Some("s1")
+        );
+        assert_eq!(
+            McplugError::ToolNotFound {
+                server: "s2".into(),
+                tool: "t".into()
+            }
+            .server_name(),
+            Some("s2")
+        );
+        assert_eq!(
+            McplugError::ConnectionFailed {
+                server: "s3".into(),
+                source: "err".into()
+            }
+            .server_name(),
+            Some("s3")
+        );
+        assert_eq!(
+            McplugError::Timeout {
+                server: "s4".into(),
+                tool: None,
+                duration: Duration::from_secs(1)
+            }
+            .server_name(),
+            Some("s4")
+        );
+        assert_eq!(
+            McplugError::AuthRequired("s5".into()).server_name(),
+            Some("s5")
+        );
+        // Variants without server_name
+        assert_eq!(McplugError::ProtocolError("e".into()).server_name(), None);
+        assert_eq!(McplugError::TransportError("e".into()).server_name(), None);
+        assert_eq!(McplugError::OAuthError("e".into()).server_name(), None);
+    }
+
+    #[test]
+    fn error_tool_name_accessors() {
+        assert_eq!(
+            McplugError::ToolNotFound {
+                server: "s".into(),
+                tool: "mytool".into()
+            }
+            .tool_name(),
+            Some("mytool")
+        );
+        assert_eq!(
+            McplugError::Timeout {
+                server: "s".into(),
+                tool: Some("atool".into()),
+                duration: Duration::from_secs(1)
+            }
+            .tool_name(),
+            Some("atool")
+        );
+        assert_eq!(
+            McplugError::Timeout {
+                server: "s".into(),
+                tool: None,
+                duration: Duration::from_secs(1)
+            }
+            .tool_name(),
+            None
+        );
+        assert_eq!(McplugError::ServerNotFound("s".into()).tool_name(), None);
+        assert_eq!(McplugError::ProtocolError("e".into()).tool_name(), None);
+    }
 }

@@ -75,4 +75,31 @@ mod tests {
         let _ = std::fs::remove_file(&path);
         let _ = std::fs::remove_dir(path.parent().unwrap());
     }
+
+    #[test]
+    fn save_token_persistence_across_instances() {
+        let server = "test-persistence-across-instances";
+        let token = TokenData {
+            access_token: "persist-access".into(),
+            refresh_token: Some("persist-refresh".into()),
+            expires_at: None,
+            token_type: "Bearer".into(),
+        };
+
+        // Save from one "instance"
+        save_token(server, &token).unwrap();
+
+        // Load from a fresh call (simulating a new instance)
+        let loaded = load_cached_token(server);
+        assert!(loaded.is_some());
+        let loaded = loaded.unwrap();
+        assert_eq!(loaded.access_token, "persist-access");
+        assert_eq!(loaded.refresh_token.as_deref(), Some("persist-refresh"));
+        assert_eq!(loaded.token_type, "Bearer");
+
+        // Clean up
+        let path = cache_path(server);
+        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::remove_dir(path.parent().unwrap());
+    }
 }

@@ -136,4 +136,27 @@ mod tests {
         assert!(parsed.mcp_servers.contains_key("test"));
         assert_eq!(parsed.imports, vec!["cursor"]);
     }
+
+    #[test]
+    fn deserialize_config_with_unknown_fields_is_lenient() {
+        let json = r#"{
+            "mcpServers": {
+                "s1": {
+                    "command": "echo",
+                    "unknownField": "ignored",
+                    "anotherUnknown": 42
+                }
+            },
+            "imports": [],
+            "topLevelUnknown": true
+        }"#;
+        // serde(default) + deny_unknown_fields is NOT used, so unknown fields
+        // should be silently skipped
+        let cfg: McplugConfig = serde_json::from_str(json).unwrap();
+        assert!(cfg.mcp_servers.contains_key("s1"));
+        assert_eq!(
+            cfg.mcp_servers.get("s1").unwrap().command.as_deref(),
+            Some("echo")
+        );
+    }
 }

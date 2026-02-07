@@ -300,4 +300,29 @@ mod tests {
         let filtered = filter_tools(&tools, None, Some(&exclude));
         assert_eq!(filtered.len(), 0);
     }
+
+    #[test]
+    fn test_generate_cli_nested_array_items() {
+        let tools = vec![ToolDefinition {
+            name: "list-items".to_string(),
+            description: "List items with tags".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "ids": {
+                        "type": "array",
+                        "items": {"type": "integer"}
+                    }
+                },
+                "required": ["tags"]
+            }),
+        }];
+        let output = generate_cli_source(&tools, "svc", None, None);
+        assert!(output.contains("pub tags: Vec<String>"));
+        assert!(output.contains("pub ids: Option<Vec<i64>>"));
+    }
 }

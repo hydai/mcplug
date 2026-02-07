@@ -166,6 +166,11 @@ impl Runtime {
 mod tests {
     use super::*;
     use crate::config::types::ServerConfig;
+    use std::sync::Mutex;
+
+    /// Mutex to serialize tests that manipulate MCPLUG_KEEPALIVE / MCPLUG_DISABLE_KEEPALIVE
+    /// env vars, preventing race conditions in parallel test execution.
+    static LIFECYCLE_ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn make_stdio_config() -> McplugConfig {
         let mut servers = HashMap::new();
@@ -265,6 +270,9 @@ mod tests {
 
     #[test]
     fn effective_lifecycle_default() {
+        let _lock = LIFECYCLE_ENV_LOCK.lock().unwrap();
+        env::remove_var("MCPLUG_KEEPALIVE");
+        env::remove_var("MCPLUG_DISABLE_KEEPALIVE");
         let config = make_stdio_config();
         let runtime = Runtime::with_config(config);
         let cfg = runtime.config.mcp_servers.get("echo").unwrap();
@@ -274,10 +282,111 @@ mod tests {
 
     #[test]
     fn effective_lifecycle_from_config() {
+        let _lock = LIFECYCLE_ENV_LOCK.lock().unwrap();
+        env::remove_var("MCPLUG_KEEPALIVE");
+        env::remove_var("MCPLUG_DISABLE_KEEPALIVE");
         let config = make_stdio_config();
         let runtime = Runtime::with_config(config);
         let cfg = runtime.config.mcp_servers.get("http-server").unwrap();
         let lc = runtime.effective_lifecycle("http-server", cfg);
         assert!(matches!(lc, Some(Lifecycle::KeepAlive)));
+    }
+
+    #[test]
+    fn server_names_returns_all_configured() {
+        let config = make_stdio_config();
+        let runtime = Runtime::with_config(config);
+        let mut names = runtime.server_names();
+        names.sort();
+        assert_eq!(names, vec!["echo", "http-server"]);
+    }
+
+    #[test]
+    fn effective_lifecycle_env_keepalive_override() {
+        let _lock = LIFECYCLE_ENV_LOCK.lock().unwrap();
+        env::remove_var("MCPLUG_KEEPALIVE");
+        env::remove_var("MCPLUG_DISABLE_KEEPALIVE");
+
+        let config = make_stdio_config();
+        let runtime = Runtime::with_config(config);
+        let cfg = runtime.config.mcp_servers.get("echo").unwrap();
+
+        env::set_var("MCPLUG_KEEPALIVE", "echo");
+        let lc = runtime.effective_lifecycle("echo", cfg);
+        env::remove_var("MCPLUG_KEEPALIVE");
+
+        assert!(matches!(lc, Some(Lifecycle::KeepAlive)));
+    }
+
+    #[test]
+    fn effective_lifecycle_env_disable_keepalive_override() {
+        let _lock = LIFECYCLE_ENV_LOCK.lock().unwrap();
+        env::remove_var("MCPLUG_KEEPALIVE");
+        env::remove_var("MCPLUG_DISABLE_KEEPALIVE");
+
+        let config = make_stdio_config();
+        let runtime = Runtime::with_config(config);
+        let cfg = runtime.config.mcp_servers.get("http-server").unwrap();
+
+        env::set_var("MCPLUG_DISABLE_KEEPALIVE", "http-server");
+        let lc = runtime.effective_lifecycle("http-server", cfg);
+        env::remove_var("MCPLUG_DISABLE_KEEPALIVE");
+
+        assert!(matches!(lc, Some(Lifecycle::Ephemeral)));
+    }
+
+    #[test]
+    fn effective_lifecycle_wildcard_keepalive() {
+        let _lock = LIFECYCLE_ENV_LOCK.lock().unwrap();
+        env::remove_var("MCPLUG_KEEPALIVE");
+        env::remove_var("MCPLUG_DISABLE_KEEPALIVE");
+
+        let config = make_stdio_config();
+        let runtime = Runtime::with_config(config);
+        let cfg = runtime.config.mcp_servers.get("echo").unwrap();
+
+        env::set_var("MCPLUG_KEEPALIVE", "*");
+        let lc = runtime.effective_lifecycle("echo", cfg);
+        env::remove_var("MCPLUG_KEEPALIVE");
+
+        assert!(matches!(lc, Some(Lifecycle::KeepAlive)));
+    }
+
+    #[tokio::test]
+    async fn close_empty_runtime_succeeds() {
+        let config = McplugConfig {
+            mcp_servers: HashMap::new(),
+            imports: vec![],
+        };
+        let runtime = Runtime::with_config(config);
+        // Closing a runtime with no active connections should succeed
+        let result = runtime.close().await;
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn create_transport_prefers_base_url_over_command() {
+        // A server with both baseUrl and command should prefer baseUrl (HTTP transport)
+        let mut servers = HashMap::new();
+        servers.insert(
+            "both".to_string(),
+            ServerConfig {
+                description: None,
+                base_url: Some("https://example.com/mcp".into()),
+                command: Some("echo".into()),
+                args: vec![],
+                env: HashMap::new(),
+                headers: HashMap::new(),
+                lifecycle: None,
+            },
+        );
+        let config = McplugConfig {
+            mcp_servers: servers,
+            imports: vec![],
+        };
+        let runtime = Runtime::with_config(config);
+        let transport = runtime.create_transport("both");
+        // Should succeed — create_transport checks base_url first
+        assert!(transport.is_ok());
     }
 }

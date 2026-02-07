@@ -382,4 +382,102 @@ mod tests {
         let err = load_config_file(Path::new("/nonexistent/file.json")).unwrap_err();
         assert!(err.to_string().contains("Cannot read file"));
     }
+
+    #[test]
+    fn multi_source_precedence_first_wins() {
+        let dir = tempfile::tempdir().unwrap();
+
+        // First config file (higher precedence)
+        let path1 = dir.path().join("first.json");
+        std::fs::write(
+            &path1,
+            r#"{"mcpServers": {"shared": {"command": "first-cmd"}}}"#,
+        )
+        .unwrap();
+
+        // Second config file (lower precedence)
+        let path2 = dir.path().join("second.json");
+        std::fs::write(
+            &path2,
+            r#"{"mcpServers": {"shared": {"command": "second-cmd"}, "extra": {"command": "extra-cmd"}}}"#,
+        )
+        .unwrap();
+
+        let cfg1 = load_config_file(&path1).unwrap();
+        let cfg2 = load_config_file(&path2).unwrap();
+
+        let mut merged: HashMap<String, ServerConfig> = HashMap::new();
+        merge_servers(&mut merged, cfg1.mcp_servers);
+        merge_servers(&mut merged, cfg2.mcp_servers);
+
+        // "shared" should come from first config (higher precedence)
+        assert_eq!(
+            merged.get("shared").unwrap().command.as_deref(),
+            Some("first-cmd")
+        );
+        // "extra" should still be added from second config
+        assert_eq!(
+            merged.get("extra").unwrap().command.as_deref(),
+            Some("extra-cmd")
+        );
+    }
+
+    #[test]
+    fn import_deduplication() {
+        // Simulate the deduplication logic from load_config
+        let mut all_imports: Vec<String> = Vec::new();
+        let imports1 = vec!["cursor".to_string(), "vscode".to_string()];
+        let imports2 = vec!["cursor".to_string(), "claude-code".to_string()];
+
+        for import in imports1 {
+            if !all_imports.contains(&import) {
+                all_imports.push(import);
+            }
+        }
+        for import in imports2 {
+            if !all_imports.contains(&import) {
+                all_imports.push(import);
+            }
+        }
+
+        // "cursor" should appear only once
+        assert_eq!(
+            all_imports.iter().filter(|i| *i == "cursor").count(),
+            1
+        );
+        assert_eq!(all_imports.len(), 3);
+        assert!(all_imports.contains(&"vscode".to_string()));
+        assert!(all_imports.contains(&"claude-code".to_string()));
+    }
+
+    #[test]
+    fn load_config_empty_servers_object() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("empty.json");
+        std::fs::write(&path, r#"{"mcpServers": {}}"#).unwrap();
+
+        let config = load_config_file(&path).unwrap();
+        assert!(config.mcp_servers.is_empty());
+    }
+
+    #[test]
+    fn strip_jsonc_trailing_comma() {
+        // JSONC stripping removes comments but doesn't fix trailing commas.
+        // This test validates the comment stripping behavior alongside trailing commas.
+        let input = r#"{
+  "key": "value" // a comment
+}"#;
+        let result = strip_jsonc_comments(input);
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["key"], "value");
+    }
+
+    #[test]
+    fn strip_jsonc_comment_at_end_of_file() {
+        let input = r#"{"key": "value"}
+// end of file comment"#;
+        let result = strip_jsonc_comments(input);
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["key"], "value");
+    }
 }

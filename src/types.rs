@@ -15,6 +15,7 @@ pub struct ServerInfo {
 pub struct ToolDefinition {
     pub name: String,
     pub description: String,
+    #[serde(alias = "inputSchema")]
     pub input_schema: serde_json::Value,
 }
 

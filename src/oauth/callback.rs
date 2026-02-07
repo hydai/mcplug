@@ -117,4 +117,19 @@ mod tests {
         assert_eq!(urldecode("a+b"), "a b");
         assert_eq!(urldecode("plain"), "plain");
     }
+
+    #[test]
+    fn parse_code_with_error_param() {
+        // When an error parameter is present but no code, should return None
+        let request =
+            "GET /callback?error=access_denied&state=xyz HTTP/1.1\r\nHost: localhost\r\n";
+        assert_eq!(parse_code_from_request(request), None);
+    }
+
+    #[test]
+    fn parse_code_empty_code_value() {
+        // code= with empty value should return None
+        let request = "GET /callback?code=&state=xyz HTTP/1.1\r\nHost: localhost\r\n";
+        assert_eq!(parse_code_from_request(request), None);
+    }
 }

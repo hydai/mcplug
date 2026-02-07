@@ -147,4 +147,21 @@ mod tests {
         assert_eq!(err.code, -32601);
         assert!(err.data.is_some());
     }
+
+    #[test]
+    fn response_parsing_notification_no_id() {
+        // Notifications have no id field
+        let raw = r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#;
+        let resp: JsonRpcResponse = serde_json::from_str(raw).unwrap();
+        assert!(resp.id.is_none());
+        assert!(resp.result.is_none());
+        assert!(resp.error.is_none());
+    }
+
+    #[test]
+    fn request_builder_starts_at_one() {
+        let builder = RequestBuilder::new();
+        let first = builder.next_request("test", None);
+        assert_eq!(first.id, 1);
+    }
 }

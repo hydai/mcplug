@@ -381,4 +381,113 @@ mod tests {
     fn timeout_invalid_value() {
         assert_eq!(parse_timeout_secs(Some("not_a_number".into())), Duration::from_secs(DEFAULT_TIMEOUT_SECS));
     }
+
+    // --- P2/P3 additional tests ---
+
+    #[test]
+    fn format_tool_all_optional_params() {
+        let tool = make_tool(
+            "search",
+            "Search things",
+            serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "limit": {"type": "integer"},
+                },
+                "required": [],
+            }),
+        );
+        let sig = format_tool_signature(&tool, false);
+        // With 0 required (< 5), optional params are shown with ?
+        assert!(sig.contains("query?: string"));
+        assert!(sig.contains("limit?: integer"));
+    }
+
+    #[test]
+    fn format_tool_unknown_type() {
+        let tool = make_tool(
+            "custom",
+            "Custom tool",
+            serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "data": {"type": "custom_type"},
+                },
+                "required": ["data"],
+            }),
+        );
+        let sig = format_tool_signature(&tool, false);
+        // Unknown types pass through as-is
+        assert!(sig.contains("data: custom_type"));
+    }
+
+    #[test]
+    fn format_tool_no_type_field() {
+        let tool = make_tool(
+            "noType",
+            "No type",
+            serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "val": {"description": "some value"},
+                },
+                "required": ["val"],
+            }),
+        );
+        let sig = format_tool_signature(&tool, false);
+        // Missing type shows "any"
+        assert!(sig.contains("val: any"));
+    }
+
+    #[test]
+    fn format_tool_empty_properties() {
+        let tool = make_tool(
+            "empty",
+            "Empty props",
+            serde_json::json!({
+                "type": "object",
+                "properties": {},
+            }),
+        );
+        let sig = format_tool_signature(&tool, false);
+        assert_eq!(sig, "empty()");
+    }
+
+    #[test]
+    fn format_tool_no_properties_key() {
+        let tool = make_tool(
+            "noprops",
+            "No properties key",
+            serde_json::json!({
+                "type": "object",
+            }),
+        );
+        let sig = format_tool_signature(&tool, false);
+        assert_eq!(sig, "noprops()");
+    }
+
+    #[test]
+    fn format_tool_exactly_five_required() {
+        let tool = make_tool(
+            "fiveReq",
+            "Five required",
+            serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "a": {"type": "string"},
+                    "b": {"type": "string"},
+                    "c": {"type": "string"},
+                    "d": {"type": "string"},
+                    "e": {"type": "string"},
+                    "opt": {"type": "string"},
+                },
+                "required": ["a", "b", "c", "d", "e"],
+            }),
+        );
+        let sig = format_tool_signature(&tool, false);
+        // 5 required = not < 5, so optional params are hidden
+        assert!(sig.contains("a: string"));
+        assert!(!sig.contains("opt"));
+    }
 }

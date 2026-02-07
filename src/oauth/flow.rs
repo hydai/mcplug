@@ -102,3 +102,44 @@ fn urlencoded(s: &str) -> String {
     }
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn urlencoded_basic_characters_pass_through() {
+        // Unreserved characters per RFC 3986 should pass through unchanged
+        assert_eq!(urlencoded("abcXYZ"), "abcXYZ");
+        assert_eq!(urlencoded("0123456789"), "0123456789");
+        assert_eq!(urlencoded("-_.~"), "-_.~");
+    }
+
+    #[test]
+    fn urlencoded_encodes_special_characters() {
+        assert_eq!(urlencoded("hello world"), "hello%20world");
+        assert_eq!(urlencoded("a&b=c"), "a%26b%3Dc");
+        assert_eq!(urlencoded("foo@bar"), "foo%40bar");
+    }
+
+    #[test]
+    fn urlencoded_encodes_slash() {
+        assert_eq!(urlencoded("/"), "%2F");
+        assert_eq!(urlencoded("http://localhost:8080/callback"), "http%3A%2F%2Flocalhost%3A8080%2Fcallback");
+    }
+
+    #[test]
+    fn urlencoded_empty_string() {
+        assert_eq!(urlencoded(""), "");
+    }
+
+    #[tokio::test]
+    async fn get_valid_token_returns_auth_required_when_no_cache() {
+        // With no cached token, get_valid_token should return AuthRequired
+        let result = get_valid_token("nonexistent-server-xyz-test", "https://example.com").await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, McplugError::AuthRequired(_)));
+        assert_eq!(err.code(), "auth_required");
+    }
+}

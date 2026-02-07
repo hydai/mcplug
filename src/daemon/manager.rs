@@ -146,4 +146,99 @@ mod tests {
         assert!(!status.running);
         assert!(status.pid.is_none());
     }
+
+    #[tokio::test]
+    async fn daemon_start_when_not_running() {
+        let dm = DaemonManager {
+            socket_path: PathBuf::from("/tmp/mcplug_test_start.sock"),
+            pid_file: PathBuf::from("/tmp/mcplug_test_start.pid"),
+        };
+        // start() should succeed (stub prints message)
+        let result = dm.start(None, false).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn daemon_stop_when_not_running() {
+        let dm = DaemonManager {
+            socket_path: PathBuf::from("/tmp/mcplug_test_stop.sock"),
+            pid_file: PathBuf::from("/tmp/mcplug_test_stop.pid"),
+        };
+        // stop when not running should be a no-op (Ok)
+        let result = dm.stop(None).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn daemon_restart_when_not_running() {
+        let dm = DaemonManager {
+            socket_path: PathBuf::from("/tmp/mcplug_test_restart.sock"),
+            pid_file: PathBuf::from("/tmp/mcplug_test_restart.pid"),
+        };
+        // restart when not running should succeed (stop is no-op, start succeeds)
+        let result = dm.restart(None, false).await;
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn daemon_is_running_with_stale_pid() {
+        // Write a PID that doesn't correspond to a running process
+        let pid_path = PathBuf::from("/tmp/mcplug_test_stale.pid");
+        std::fs::write(&pid_path, "99999999").unwrap();
+        let dm = DaemonManager {
+            socket_path: PathBuf::from("/tmp/mcplug_test_stale.sock"),
+            pid_file: pid_path.clone(),
+        };
+        // PID 99999999 should not exist
+        assert!(!dm.is_running());
+        let _ = std::fs::remove_file(&pid_path);
+    }
+
+    #[test]
+    fn daemon_is_running_with_invalid_pid_content() {
+        let pid_path = PathBuf::from("/tmp/mcplug_test_invalid_pid.pid");
+        std::fs::write(&pid_path, "not_a_number").unwrap();
+        let dm = DaemonManager {
+            socket_path: PathBuf::from("/tmp/mcplug_test_invalid_pid.sock"),
+            pid_file: pid_path.clone(),
+        };
+        assert!(!dm.is_running());
+        let _ = std::fs::remove_file(&pid_path);
+    }
+
+    #[test]
+    fn daemon_is_running_with_empty_pid_file() {
+        let pid_path = PathBuf::from("/tmp/mcplug_test_empty_pid.pid");
+        std::fs::write(&pid_path, "").unwrap();
+        let dm = DaemonManager {
+            socket_path: PathBuf::from("/tmp/mcplug_test_empty_pid.sock"),
+            pid_file: pid_path.clone(),
+        };
+        assert!(!dm.is_running());
+        let _ = std::fs::remove_file(&pid_path);
+    }
+
+    #[test]
+    fn daemon_status_structure() {
+        let status = DaemonStatus {
+            running: true,
+            pid: Some(1234),
+            uptime_secs: Some(600),
+            managed_servers: vec!["server-a".to_string(), "server-b".to_string()],
+        };
+        let json = serde_json::to_value(&status).unwrap();
+        assert_eq!(json["running"], true);
+        assert_eq!(json["pid"], 1234);
+        assert_eq!(json["uptime_secs"], 600);
+        assert_eq!(json["managed_servers"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn daemon_manager_new_uses_home_dir() {
+        let dm = DaemonManager::new();
+        let socket_str = dm.socket_path().to_string_lossy().to_string();
+        let pid_str = dm.pid_file().to_string_lossy().to_string();
+        assert!(socket_str.contains(".mcplug"));
+        assert!(pid_str.contains(".mcplug"));
+    }
 }

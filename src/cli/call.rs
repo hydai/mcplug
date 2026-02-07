@@ -156,4 +156,55 @@ mod tests {
     fn timeout_invalid_value() {
         assert_eq!(parse_timeout_secs(Some("bad".into())), Duration::from_secs(DEFAULT_TIMEOUT_SECS));
     }
+
+    #[test]
+    fn resolve_output_format_unknown_falls_to_pretty() {
+        assert_eq!(
+            resolve_output_mode(false, false, Some("unknown")),
+            OutputMode::Pretty
+        );
+    }
+
+    #[test]
+    fn timeout_zero_is_valid() {
+        assert_eq!(parse_timeout_secs(Some("0".into())), Duration::from_secs(0));
+    }
+
+    #[test]
+    fn timeout_negative_falls_to_default() {
+        // Negative number cannot parse as u64, so falls back to default
+        assert_eq!(
+            parse_timeout_secs(Some("-1".into())),
+            Duration::from_secs(DEFAULT_TIMEOUT_SECS)
+        );
+    }
+
+    #[test]
+    fn resolve_output_format_empty_string_falls_to_pretty() {
+        assert_eq!(
+            resolve_output_mode(false, false, Some("")),
+            OutputMode::Pretty
+        );
+    }
+
+    #[test]
+    fn resolve_output_format_case_sensitive() {
+        // "Json" (capitalized) should not match "json", so falls to Pretty
+        assert_eq!(
+            resolve_output_mode(false, false, Some("Json")),
+            OutputMode::Pretty
+        );
+        assert_eq!(
+            resolve_output_mode(false, false, Some("RAW")),
+            OutputMode::Pretty
+        );
+    }
+
+    #[test]
+    fn timeout_very_large_value() {
+        assert_eq!(
+            parse_timeout_secs(Some("999999".into())),
+            Duration::from_secs(999999)
+        );
+    }
 }

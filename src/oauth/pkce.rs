@@ -52,4 +52,22 @@ mod tests {
         assert_ne!(a.code_verifier, b.code_verifier);
         assert_ne!(a.code_challenge, b.code_challenge);
     }
+
+    #[test]
+    fn pkce_verifier_uses_url_safe_chars() {
+        let pkce = generate_pkce();
+        // base64url charset: A-Z, a-z, 0-9, -, _ (no +, /, or =)
+        for ch in pkce.code_verifier.chars() {
+            assert!(
+                ch.is_ascii_alphanumeric() || ch == '-' || ch == '_',
+                "Invalid char in verifier: '{ch}'"
+            );
+        }
+        for ch in pkce.code_challenge.chars() {
+            assert!(
+                ch.is_ascii_alphanumeric() || ch == '-' || ch == '_',
+                "Invalid char in challenge: '{ch}'"
+            );
+        }
+    }
 }
