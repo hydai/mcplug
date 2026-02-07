@@ -184,6 +184,10 @@ Integration tests use a mock MCP server binary (`tests/fixtures/mock_mcp_server.
 | `MCPLUG_OAUTH_TIMEOUT_MS` | 60000 | OAuth timeout (ms) |
 | `MCPLUG_LOG_LEVEL` | warn | Logging verbosity |
 
+## Acknowledgements
+
+mcplug is inspired by [mcporter](https://github.com/steipete/mcporter), a Node.js-based MCP tool runner. mcplug aims to bring the same capabilities to the Rust ecosystem as a single native binary with no Node.js dependency.
+
 ## License
 
 MIT
