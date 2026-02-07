@@ -51,7 +51,33 @@ src/
 │   └── generate_cli.rs  # `mcplug generate-cli` — standalone CLI generation
 └── daemon/              # Daemon management
     └── manager.rs       # Start/stop/restart/status for keep-alive servers
+
+tests/
+├── common/
+│   ├── mod.rs           # Shared test helpers (mock_stdio_config, temp_config_dir)
+│   └── http_mock.rs     # wiremock-based HTTP mock server
+├── fixtures/
+│   └── mock_mcp_server.rs  # Mock MCP stdio server binary (5 tools: add, echo, slow, error, counter)
+├── runtime_integration.rs  # Runtime end-to-end tests (list, call, connection reuse, timeout)
+├── cli_integration.rs      # CLI binary tests via assert_cmd (list, call, config show)
+├── daemon_integration.rs   # Daemon lifecycle tests (start/stop, persistent state)
+└── codegen_integration.rs  # Code generation from live mock server
 ```
+
+## Testing
+
+```sh
+cargo test               # run all tests (unit + integration)
+cargo test --lib         # run unit tests only
+cargo test --test runtime_integration  # run a specific integration test file
+```
+
+- **304 total tests**: 283 unit (inline `#[cfg(test)]` modules) + 21 integration (`tests/`)
+- **Mock MCP server**: `tests/fixtures/mock_mcp_server.rs` compiles as a separate binary. Supports 5 tools: `add`, `echo`, `slow`, `error`, `counter`. Used by integration tests via `common::mock_stdio_config()`.
+- **HTTP mocking**: `tests/common/http_mock.rs` uses `wiremock` for HTTP transport tests.
+- **CLI testing**: `tests/cli_integration.rs` uses `assert_cmd` + `predicates` to test the binary end-to-end.
+- **Env var tests**: Runtime lifecycle tests that set/unset env vars use a `LIFECYCLE_ENV_LOCK` mutex to prevent race conditions in parallel execution.
+- **Test spec**: See `test-spec.md` for the full test specification with per-module breakdown and mcporter parity mapping.
 
 ## Key Patterns
 

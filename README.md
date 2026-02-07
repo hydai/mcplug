@@ -162,6 +162,18 @@ let chrome = ServerProxy::new(&runtime, "chrome-devtools");
 let snapshot = chrome.call("takeSnapshot", json!({})).await?;
 ```
 
+## Testing
+
+```sh
+cargo test               # run all tests (unit + integration)
+cargo test --lib         # unit tests only
+cargo test --test cli_integration  # specific integration suite
+```
+
+304 tests covering all modules: argument parsing, config loading/merging, CLI commands, OAuth flow, transports (stdio + HTTP), runtime connection pooling, daemon management, code generation, and error handling.
+
+Integration tests use a mock MCP server binary (`tests/fixtures/mock_mcp_server.rs`) that supports 5 tools over stdio. CLI tests use `assert_cmd` for end-to-end binary verification.
+
 ## Environment Variables
 
 | Variable | Default | Purpose |
