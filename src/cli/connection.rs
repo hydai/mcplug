@@ -74,6 +74,7 @@ pub fn connect_to_server(
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn connect_adhoc_stdio_echo() {
         let config = McplugConfig::default();
@@ -132,6 +133,7 @@ mod tests {
         assert!(result.is_ok());
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn connect_config_stdio_server() {
         use crate::config::ServerConfig;

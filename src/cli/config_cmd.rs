@@ -276,7 +276,7 @@ fn write_server_to_config(
     };
 
     // Ensure mcpServers object exists.
-    if !doc.get("mcpServers").is_some() {
+    if doc.get("mcpServers").is_none() {
         doc.as_object_mut()
             .unwrap()
             .insert("mcpServers".into(), serde_json::json!({}));

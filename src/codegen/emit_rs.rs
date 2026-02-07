@@ -161,7 +161,7 @@ pub fn sanitize_identifier(name: &str) -> String {
 
 /// Convert a string to PascalCase.
 pub fn to_pascal_case(name: &str) -> String {
-    name.split(|c: char| c == '-' || c == '_' || c == '.' || c == ' ')
+    name.split(['-', '_', '.', ' '])
         .filter(|s| !s.is_empty())
         .map(|word| {
             let mut chars = word.chars();

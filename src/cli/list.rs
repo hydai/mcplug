@@ -90,6 +90,7 @@ pub async fn run_list(
 }
 
 /// List tools for a specific server.
+#[allow(clippy::too_many_arguments)]
 async fn list_server_tools(
     server_name: &str,
     config: &crate::config::McplugConfig,

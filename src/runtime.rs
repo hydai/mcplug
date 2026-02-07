@@ -106,6 +106,7 @@ impl Runtime {
     }
 
     /// Resolve the effective lifecycle for a server, considering env overrides.
+    #[allow(dead_code)]
     fn effective_lifecycle(&self, server: &str, cfg: &ServerConfig) -> Option<Lifecycle> {
         // MCPLUG_KEEPALIVE=server_name forces keep-alive
         if let Ok(val) = env::var("MCPLUG_KEEPALIVE") {
@@ -213,6 +214,7 @@ mod tests {
         assert!(names.contains(&"http-server".to_string()));
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn create_transport_stdio() {
         let config = make_stdio_config();

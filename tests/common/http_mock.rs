@@ -2,6 +2,7 @@ use wiremock::{MockServer, Mock, ResponseTemplate};
 use wiremock::matchers::{method, body_partial_json};
 
 /// Start a mock MCP HTTP server that responds to initialize + tools/list + tools/call.
+#[allow(dead_code)]
 pub async fn start_mock_http_server() -> MockServer {
     let server = MockServer::start().await;
 

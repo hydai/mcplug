@@ -238,7 +238,7 @@ mod tests {
         );
         assert_eq!(McplugError::ProtocolError("e".into()).code(), "parse_error");
         assert_eq!(McplugError::OAuthError("e".into()).code(), "oauth_error");
-        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "test");
+        let io_err = std::io::Error::other("test");
         assert_eq!(McplugError::IoError(io_err).code(), "io_error");
     }
 

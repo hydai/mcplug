@@ -17,6 +17,12 @@ pub struct DaemonManager {
     pid_file: PathBuf,
 }
 
+impl Default for DaemonManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DaemonManager {
     pub fn new() -> Self {
         let base = dirs::home_dir()
@@ -37,15 +43,22 @@ impl DaemonManager {
     }
 
     pub fn is_running(&self) -> bool {
-        if let Ok(pid_str) = std::fs::read_to_string(&self.pid_file) {
-            if let Ok(pid) = pid_str.trim().parse::<u32>() {
-                // Check if process exists (signal 0)
-                unsafe {
-                    return libc_kill(pid as i32, 0) == 0;
+        #[cfg(unix)]
+        {
+            if let Ok(pid_str) = std::fs::read_to_string(&self.pid_file) {
+                if let Ok(pid) = pid_str.trim().parse::<u32>() {
+                    // Check if process exists (signal 0)
+                    unsafe {
+                        return libc_kill(pid as i32, 0) == 0;
+                    }
                 }
             }
+            false
         }
-        false
+        #[cfg(not(unix))]
+        {
+            false
+        }
     }
 
     pub async fn start(
@@ -67,15 +80,22 @@ impl DaemonManager {
             eprintln!("Daemon is not running");
             return Ok(());
         }
-        if let Ok(pid_str) = std::fs::read_to_string(&self.pid_file) {
-            if let Ok(pid) = pid_str.trim().parse::<i32>() {
-                unsafe {
-                    libc_kill(pid, 15); // SIGTERM
+        #[cfg(unix)]
+        {
+            if let Ok(pid_str) = std::fs::read_to_string(&self.pid_file) {
+                if let Ok(pid) = pid_str.trim().parse::<i32>() {
+                    unsafe {
+                        libc_kill(pid, 15); // SIGTERM
+                    }
+                    let _ = std::fs::remove_file(&self.pid_file);
+                    let _ = std::fs::remove_file(&self.socket_path);
+                    eprintln!("Daemon stopped");
                 }
-                let _ = std::fs::remove_file(&self.pid_file);
-                let _ = std::fs::remove_file(&self.socket_path);
-                eprintln!("Daemon stopped");
             }
+        }
+        #[cfg(not(unix))]
+        {
+            eprintln!("Daemon stop is not supported on Windows");
         }
         Ok(())
     }
@@ -108,10 +128,12 @@ impl DaemonManager {
 }
 
 // Minimal libc kill binding to avoid full libc dependency
+#[cfg(unix)]
 extern "C" {
     fn kill(pid: i32, sig: i32) -> i32;
 }
 
+#[cfg(unix)]
 unsafe fn libc_kill(pid: i32, sig: i32) -> i32 {
     unsafe { kill(pid, sig) }
 }
@@ -127,6 +149,7 @@ mod tests {
         assert!(dm.pid_file().ends_with("daemon.pid"));
     }
 
+    #[cfg(unix)]
     #[test]
     fn daemon_not_running_when_no_pid_file() {
         let dm = DaemonManager {
@@ -136,6 +159,7 @@ mod tests {
         assert!(!dm.is_running());
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn daemon_status_when_not_running() {
         let dm = DaemonManager {
@@ -147,6 +171,7 @@ mod tests {
         assert!(status.pid.is_none());
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn daemon_start_when_not_running() {
         let dm = DaemonManager {
@@ -158,6 +183,7 @@ mod tests {
         assert!(result.is_ok());
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn daemon_stop_when_not_running() {
         let dm = DaemonManager {
@@ -169,6 +195,7 @@ mod tests {
         assert!(result.is_ok());
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn daemon_restart_when_not_running() {
         let dm = DaemonManager {
@@ -180,6 +207,7 @@ mod tests {
         assert!(result.is_ok());
     }
 
+    #[cfg(unix)]
     #[test]
     fn daemon_is_running_with_stale_pid() {
         // Write a PID that doesn't correspond to a running process
@@ -194,6 +222,7 @@ mod tests {
         let _ = std::fs::remove_file(&pid_path);
     }
 
+    #[cfg(unix)]
     #[test]
     fn daemon_is_running_with_invalid_pid_content() {
         let pid_path = PathBuf::from("/tmp/mcplug_test_invalid_pid.pid");
@@ -206,6 +235,7 @@ mod tests {
         let _ = std::fs::remove_file(&pid_path);
     }
 
+    #[cfg(unix)]
     #[test]
     fn daemon_is_running_with_empty_pid_file() {
         let pid_path = PathBuf::from("/tmp/mcplug_test_empty_pid.pid");

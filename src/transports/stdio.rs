@@ -316,6 +316,7 @@ impl McpTransport for StdioTransport {
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
     #[test]
     fn stdio_transport_creation_with_echo() {
         let rt = tokio::runtime::Runtime::new().unwrap();
@@ -348,6 +349,7 @@ mod tests {
         assert!(err.to_string().contains("bad-server"));
     }
 
+    #[cfg(unix)]
     #[test]
     fn stdio_transport_with_env() {
         let rt = tokio::runtime::Runtime::new().unwrap();
@@ -367,6 +369,7 @@ mod tests {
         });
     }
 
+    #[cfg(unix)]
     #[test]
     fn stdio_transport_with_cwd() {
         let rt = tokio::runtime::Runtime::new().unwrap();
@@ -401,6 +404,7 @@ mod tests {
         });
     }
 
+    #[cfg(unix)]
     #[test]
     fn stdio_transport_debug_format() {
         let rt = tokio::runtime::Runtime::new().unwrap();
@@ -421,6 +425,7 @@ mod tests {
         });
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn stdio_transport_send_and_receive() {
         // Use `cat` which echoes stdin to stdout — we can send a JSON-RPC

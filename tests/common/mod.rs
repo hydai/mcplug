@@ -36,6 +36,7 @@ pub fn mock_server_bin_path() -> PathBuf {
 }
 
 /// Create a temp directory with a mcplug.json config file.
+#[allow(dead_code)]
 pub fn temp_config_dir(config: &McplugConfig) -> tempfile::TempDir {
     let dir = tempfile::tempdir().unwrap();
     let config_path = dir.path().join("mcplug.json");

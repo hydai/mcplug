@@ -193,7 +193,7 @@ pub fn load_config(cli_config: Option<&str>) -> Result<McplugConfig, McplugError
     }
 
     // Expand environment variables in all server configs
-    for (_name, config) in &mut merged_servers {
+    for config in merged_servers.values_mut() {
         expand_server_config(config)?;
     }
 

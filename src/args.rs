@@ -117,12 +117,11 @@ pub fn suggest_tool(input: &str, known_tools: &[&str]) -> Option<String> {
 /// Coerce a raw string value into a JSON value.
 fn coerce_value(raw: &str) -> Value {
     // Strip surrounding quotes
-    if (raw.starts_with('"') && raw.ends_with('"'))
-        || (raw.starts_with('\'') && raw.ends_with('\''))
+    if ((raw.starts_with('"') && raw.ends_with('"'))
+        || (raw.starts_with('\'') && raw.ends_with('\'')))
+        && raw.len() >= 2
     {
-        if raw.len() >= 2 {
-            return Value::String(raw[1..raw.len() - 1].to_string());
-        }
+        return Value::String(raw[1..raw.len() - 1].to_string());
     }
 
     // Boolean
@@ -204,12 +203,11 @@ fn parse_inner_value(input: &str) -> Result<Value, McplugError> {
     let input = input.trim();
 
     // Quoted string
-    if (input.starts_with('"') && input.ends_with('"'))
-        || (input.starts_with('\'') && input.ends_with('\''))
+    if ((input.starts_with('"') && input.ends_with('"'))
+        || (input.starts_with('\'') && input.ends_with('\'')))
+        && input.len() >= 2
     {
-        if input.len() >= 2 {
-            return Ok(Value::String(input[1..input.len() - 1].to_string()));
-        }
+        return Ok(Value::String(input[1..input.len() - 1].to_string()));
     }
 
     // Boolean
@@ -394,7 +392,9 @@ mod tests {
     #[test]
     fn parse_args_colon_float() {
         let result = parse_args(&["rate:3.14".to_string()]).unwrap();
-        assert_eq!(result, json!({"rate": 3.14}));
+        #[allow(clippy::approx_constant)]
+        let expected = json!({"rate": 3.14_f64});
+        assert_eq!(result, expected);
     }
 
     #[test]

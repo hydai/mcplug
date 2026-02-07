@@ -6,7 +6,7 @@ use mcplug::daemon::DaemonManager;
 #[tokio::test]
 async fn daemon_start_stop_cycle() {
     let dm = DaemonManager::new();
-    let status = dm.status().await.unwrap();
+    let _status = dm.status().await.unwrap();
     // Daemon should not be running in CI/test environment (no PID file expected)
     // We test that status() works and start/stop don't error even when not running
     dm.start(None, false).await.unwrap();

@@ -3,21 +3,12 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct McplugConfig {
     #[serde(default, rename = "mcpServers")]
     pub mcp_servers: HashMap<String, ServerConfig>,
     #[serde(default)]
     pub imports: Vec<String>,
-}
-
-impl Default for McplugConfig {
-    fn default() -> Self {
-        Self {
-            mcp_servers: HashMap::new(),
-            imports: Vec::new(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

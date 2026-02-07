@@ -4,6 +4,7 @@ use predicates::prelude::*;
 mod common;
 
 fn mcplug_cmd() -> Command {
+    #[allow(deprecated)]
     Command::cargo_bin("mcplug").unwrap()
 }
 
