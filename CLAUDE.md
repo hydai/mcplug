@@ -87,18 +87,18 @@ cargo test --test runtime_integration  # run a specific integration test file
 - **Steps**: clippy (`-D warnings`), test, build
 - Clippy must pass with zero warnings on all platforms before merge.
 
-### Release (`.github/workflows/release.yml`)
-- **Trigger**: push tags matching `v*`
-- **Targets**: `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-pc-windows-msvc`
-- **aarch64-linux**: cross-compiled with `gcc-aarch64-linux-gnu` + `--features vendored-openssl` (compiles OpenSSL from source to avoid cross-compile pkg-config issues)
-- **Artifacts**: `mcplug-<tag>-<target>.tar.gz` (unix) or `.zip` (windows)
-- Creates a GitHub Release with auto-generated notes and all 5 binaries attached.
+### Release (`.github/workflows/release.yml` + `prepare-release.yml`)
+- Managed by [knope](https://knope.tech) with PR-based flow
+- **prepare-release.yml**: triggers on push to `master`, creates/updates a release PR with version bump and changelog
+- **release.yml**: triggers when the release PR is merged, builds all 5 targets, creates GitHub Release with artifacts
+- **Targets**: same 5 targets (x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin, x86_64-windows)
+- **Changelog**: auto-generated in `CHANGELOG.md` from conventional commits
 
 ### Releasing a new version
-```sh
-git tag v0.1.0
-git push origin v0.1.0
-```
+1. Push conventional commits (`feat:`, `fix:`, etc.) to `master`
+2. The `prepare-release` workflow auto-creates/updates a PR from the `release` branch
+3. Review the PR (version bump in Cargo.toml, changelog entries)
+4. Merge the PR — this triggers builds and creates the GitHub Release
 
 ## Cross-Platform
 

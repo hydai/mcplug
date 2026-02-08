@@ -1,8 +1,9 @@
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
+  pull_request:
+    types: [closed]
+    branches: [master]
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,7 +12,8 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-artifacts:
+    if: github.head_ref == 'release' && github.event.pull_request.merged == true
     name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -21,30 +23,23 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             runner: ubuntu-latest
             cross: false
-            archive: tar.gz
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-latest
             cross: true
-            archive: tar.gz
           - target: x86_64-apple-darwin
             runner: macos-latest
             cross: false
-            archive: tar.gz
           - target: aarch64-apple-darwin
             runner: macos-latest
             cross: false
-            archive: tar.gz
           - target: x86_64-pc-windows-msvc
             runner: windows-latest
             cross: false
-            archive: zip
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}
@@ -69,41 +64,45 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }} --bin mcplug
 
       - name: Package (unix)
-        if: matrix.archive == 'tar.gz'
-        env:
-          TARGET: ${{ matrix.target }}
-          TAG: ${{ github.ref_name }}
+        if: runner.os != 'Windows'
         run: |
-          cd "target/${TARGET}/release"
-          tar czf "../../../mcplug-${TAG}-${TARGET}.tar.gz" mcplug
+          cd "target/${{ matrix.target }}/release"
+          tar czf "../../../mcplug-${{ matrix.target }}.tgz" mcplug
           cd ../../..
 
       - name: Package (windows)
-        if: matrix.archive == 'zip'
-        env:
-          TARGET: ${{ matrix.target }}
-          TAG: ${{ github.ref_name }}
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path "target/${env:TARGET}/release/mcplug.exe" -DestinationPath "mcplug-${env:TAG}-${env:TARGET}.zip"
+          Compress-Archive -Path "target/${{ matrix.target }}/release/mcplug.exe" -DestinationPath "mcplug-${{ matrix.target }}.zip"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
-          name: mcplug-${{ matrix.target }}
-          path: mcplug-${{ github.ref_name }}-${{ matrix.target }}.*
+          name: ${{ matrix.target }}
+          path: mcplug-${{ matrix.target }}.*
 
   release:
-    name: Create Release
-    needs: build
+    needs: build-artifacts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "[email protected]"
+
+      - uses: actions/download-artifact@v7
+        with:
+          path: artifacts
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@v2
+      - uses: knope-dev/action@v2.1.0
         with:
-          generate_release_notes: true
-          files: |
-            mcplug-*.tar.gz
-            mcplug-*.zip
+          version: 0.22.2
+
+      - run: knope release --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
