@@ -52,12 +52,8 @@ jobs:
       - name: Install cross-compilation tools
         if: matrix.cross
         run: |
-          sudo dpkg --add-architecture arm64
-          sudo sed -i 's/^deb /deb [arch=amd64] /' /etc/apt/sources.list.d/*.list
-          echo 'deb [arch=arm64] http://ports.ubuntu.com/ noble main restricted universe multiverse' | sudo tee /etc/apt/sources.list.d/arm64.list
-          echo 'deb [arch=arm64] http://ports.ubuntu.com/ noble-updates main restricted universe multiverse' | sudo tee -a /etc/apt/sources.list.d/arm64.list
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu libssl-dev:arm64
+          sudo apt-get install -y gcc-aarch64-linux-gnu
           mkdir -p .cargo
           cat > .cargo/config.toml <<'EOF'
           [target.aarch64-unknown-linux-gnu]
@@ -66,10 +62,7 @@ jobs:
 
       - name: Build (cross)
         if: matrix.cross
-        env:
-          PKG_CONFIG_ALLOW_CROSS: "1"
-          PKG_CONFIG_PATH: /usr/lib/aarch64-linux-gnu/pkgconfig
-        run: cargo build --release --target ${{ matrix.target }} --bin mcplug
+        run: cargo build --release --target ${{ matrix.target }} --bin mcplug --features vendored-openssl
 
       - name: Build
         if: ${{ !matrix.cross }}

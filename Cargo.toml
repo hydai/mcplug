@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 description = "A Rust toolkit for discovering, calling, and composing MCP servers"
 
+[features]
+default = []
+vendored-openssl = ["openssl/vendored"]
+
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 clap = { version = "4", features = ["derive", "env"] }
@@ -11,6 +15,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = "0.1"
 reqwest = { version = "0.12", features = ["json"] }
+openssl = { version = "0.10", optional = true }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 dirs = "6"
