@@ -5,11 +5,11 @@ Rust toolkit for discovering, calling, and composing MCP (Model Context Protocol
 ## Build & Test
 
 ```sh
-cargo build              # debug build
-cargo build --release    # release build
-cargo test               # run all tests
-cargo test -- --nocapture # run tests with output
-cargo clippy             # lint
+cargo build                              # debug build
+cargo build --release                    # release build
+cargo test --features test-fixtures      # run all tests (unit + integration)
+cargo test --features test-fixtures -- --nocapture # run tests with output
+cargo clippy                             # lint
 ```
 
 ## Architecture
@@ -67,9 +67,9 @@ tests/
 ## Testing
 
 ```sh
-cargo test               # run all tests (unit + integration)
-cargo test --lib         # run unit tests only
-cargo test --test runtime_integration  # run a specific integration test file
+cargo test --features test-fixtures      # run all tests (unit + integration)
+cargo test --lib                         # run unit tests only
+cargo test --features test-fixtures --test runtime_integration  # run a specific integration test file
 ```
 
 - **304 total tests**: 283 unit (inline `#[cfg(test)]` modules) + 21 integration (`tests/`)
@@ -90,7 +90,9 @@ cargo test --test runtime_integration  # run a specific integration test file
 ### Release (`.github/workflows/release.yml` + `prepare-release.yml`)
 - Managed by [knope](https://knope.tech) with PR-based flow
 - **prepare-release.yml**: triggers on push to `master`, creates/updates a release PR with version bump and changelog
-- **release.yml**: triggers when the release PR is merged, builds all 5 targets, creates GitHub Release with artifacts
+- **release.yml**: triggers when the release PR is merged; builds all 5 targets, publishes to crates.io via trusted publishing, then creates GitHub Release with artifacts
+- **Job chain**: `build-artifacts` → `publish-crate` → `release` (each depends on the previous succeeding)
+- **Trusted publishing**: uses OIDC token exchange (`id-token: write` permission + `rust-lang/crates-io-auth-action`) — no long-lived API tokens needed
 - **Targets**: same 5 targets (x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin, x86_64-windows)
 - **Changelog**: auto-generated in `CHANGELOG.md` from conventional commits
 
@@ -98,7 +100,7 @@ cargo test --test runtime_integration  # run a specific integration test file
 1. Push conventional commits (`feat:`, `fix:`, etc.) to `master`
 2. The `prepare-release` workflow auto-creates/updates a PR from the `release` branch
 3. Review the PR (version bump in Cargo.toml, changelog entries)
-4. Merge the PR — this triggers builds and creates the GitHub Release
+4. Merge the PR — this triggers builds, publishes to crates.io, and creates the GitHub Release
 
 ## Cross-Platform
 

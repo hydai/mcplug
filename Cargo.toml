@@ -10,6 +10,7 @@ homepage = "https://github.com/hydai/mcplug"
 [features]
 default = []
 vendored-openssl = ["openssl/vendored"]
+test-fixtures = []
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -62,3 +63,4 @@ path = "src/main.rs"
 [[bin]]
 name = "mock_mcp_server"
 path = "tests/fixtures/mock_mcp_server.rs"
+required-features = ["test-fixtures"]
