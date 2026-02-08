@@ -96,6 +96,10 @@ cargo test --features test-fixtures --test runtime_integration  # run a specific
 - **Targets**: same 5 targets (x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin, x86_64-windows)
 - **Changelog**: auto-generated in `CHANGELOG.md` from conventional commits
 
+### Dependabot (`.github/dependabot.yml`)
+- **Cargo**: weekly checks for new versions of Rust dependencies; opens PRs for updates
+- **GitHub Actions**: weekly checks for new action versions used in workflow files; opens PRs for updates
+
 ### Releasing a new version
 1. Push conventional commits (`feat:`, `fix:`, etc.) to `master`
 2. The `prepare-release` workflow auto-creates/updates a PR from the `release` branch
