@@ -79,6 +79,34 @@ cargo test --test runtime_integration  # run a specific integration test file
 - **Env var tests**: Runtime lifecycle tests that set/unset env vars use a `LIFECYCLE_ENV_LOCK` mutex to prevent race conditions in parallel execution.
 - **Test spec**: See `test-spec.md` for the full test specification with per-module breakdown and mcporter parity mapping.
 
+## CI/CD
+
+### CI (`.github/workflows/ci.yml`)
+- **Triggers**: push to `main`/`master`, pull requests to `main`/`master`
+- **Matrix**: `ubuntu-latest`, `macos-latest`, `windows-latest` (`fail-fast: false`)
+- **Steps**: clippy (`-D warnings`), test, build
+- Clippy must pass with zero warnings on all platforms before merge.
+
+### Release (`.github/workflows/release.yml`)
+- **Trigger**: push tags matching `v*`
+- **Targets**: `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-pc-windows-msvc`
+- **aarch64-linux**: cross-compiled with `gcc-aarch64-linux-gnu` + `--features vendored-openssl` (compiles OpenSSL from source to avoid cross-compile pkg-config issues)
+- **Artifacts**: `mcplug-<tag>-<target>.tar.gz` (unix) or `.zip` (windows)
+- Creates a GitHub Release with auto-generated notes and all 5 binaries attached.
+
+### Releasing a new version
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+## Cross-Platform
+
+- POSIX-only code (daemon `kill(2)` FFI, `/tmp` paths) is gated with `#[cfg(unix)]`
+- Tests using `"cat"` as a subprocess are gated with `#[cfg(unix)]`
+- Windows stubs: `DaemonManager::is_running()` returns `false`, `stop()` prints "not supported"
+- The `vendored-openssl` feature flag enables `openssl/vendored` for cross-compilation; not used in default builds
+
 ## Key Patterns
 
 - **Transport abstraction**: `McpTransport` trait in `transport.rs` — both `StdioTransport` and `HttpSseTransport` implement it. All callers are transport-agnostic.
