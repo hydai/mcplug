@@ -1,7 +1,7 @@
 [package]
 versioned_files = ["Cargo.toml", "Cargo.lock"]
 changelog = "CHANGELOG.md"
-assets = ["artifacts/*.tgz", "artifacts/*.zip"]
+assets = "artifacts/*"
 
 [[workflows]]
 name = "prepare-release"
