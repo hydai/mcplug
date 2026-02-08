@@ -3,6 +3,9 @@ name = "mcplug"
 version = "0.1.0"
 edition = "2021"
 description = "A Rust toolkit for discovering, calling, and composing MCP servers"
+license = "MIT"
+repository = "https://github.com/hydai/mcplug"
+homepage = "https://github.com/hydai/mcplug"
 
 [features]
 default = []
