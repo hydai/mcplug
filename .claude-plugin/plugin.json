@@ -1,0 +1,7 @@
+{
+  "name": "mcplug",
+  "version": "1.0.0",
+  "description": "Domain expertise for the mcplug MCP toolkit — CLI commands, configuration system, and Rust library API",
+  "author": "hydai",
+  "license": "MIT"
+}
