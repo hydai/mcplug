@@ -184,6 +184,19 @@ Integration tests use a mock MCP server binary (`tests/fixtures/mock_mcp_server.
 | `MCPLUG_OAUTH_TIMEOUT_MS` | 60000 | OAuth timeout (ms) |
 | `MCPLUG_LOG_LEVEL` | warn | Logging verbosity |
 
+## Claude Code Plugin
+
+mcplug ships with a [Claude Code](https://claude.com/claude-code) plugin that provides contextual help when working on or with the project.
+
+```sh
+claude --plugin-dir /path/to/mcplug
+```
+
+This enables:
+- **Skills** — contextual knowledge about CLI commands, configuration, and library API (activated automatically by relevant questions)
+- **Commands** — `/mcplug:quickstart` for first-run setup, `/mcplug:troubleshoot` for diagnosing issues
+- **Agent** — `mcplug-guide` answers questions like "how do I use mcplug" by consulting skills and source code
+
 ## Acknowledgements
 
 mcplug is inspired by [mcporter](https://github.com/steipete/mcporter), a Node.js-based MCP tool runner. mcplug aims to bring the same capabilities to the Rust ecosystem as a single native binary with no Node.js dependency.

@@ -52,6 +52,19 @@ src/
 └── daemon/              # Daemon management
     └── manager.rs       # Start/stop/restart/status for keep-alive servers
 
+agents/
+└── mcplug-guide.md        # Proactive guide agent for mcplug questions
+commands/
+├── quickstart.md           # /mcplug:quickstart — interactive first-run walkthrough
+└── troubleshoot.md         # /mcplug:troubleshoot — diagnose connection/config/auth issues
+skills/
+├── cli-usage/
+│   └── SKILL.md            # CLI commands, arg formats, output modes
+├── configuration/
+│   └── SKILL.md            # Config files, precedence, env vars, editors
+└── library-api/
+    └── SKILL.md            # Rust crate: call_once, Runtime, ServerProxy
+
 tests/
 ├── common/
 │   ├── mod.rs           # Shared test helpers (mock_stdio_config, temp_config_dir)
