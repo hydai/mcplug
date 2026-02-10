@@ -1,4 +1,10 @@
 # Changelog
+## 0.1.2 (2026-02-10)
+
+### Features
+
+- add Claude Code plugin with skills, commands, and agent
+
 ## 0.1.1 (2026-02-08)
 
 ### Features
