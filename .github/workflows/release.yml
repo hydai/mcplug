@@ -77,7 +77,7 @@ jobs:
         run: |
           Compress-Archive -Path "target/${{ matrix.target }}/release/mcplug.exe" -DestinationPath "mcplug-${{ matrix.target }}.zip"
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.target }}
           path: mcplug-${{ matrix.target }}.*
