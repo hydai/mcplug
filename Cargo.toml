@@ -30,7 +30,7 @@ tokio-stream = "0.1"
 uuid = { version = "1", features = ["v4"] }
 webbrowser = "1"
 colored = "3"
-sha2 = "0.10"
+sha2 = "0.11"
 base64 = "0.22"
 rand = "0.10"
 
